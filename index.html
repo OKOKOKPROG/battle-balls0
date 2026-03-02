@@ -2,48 +2,226 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>My Game</title>
+<title>Battle Roll</title>
+
 <style>
-body {
-  background:#111;
+body{
+  margin:0;
+  font-family:'Segoe UI',Arial,sans-serif;
+  background:linear-gradient(135deg,#0b0f1a 0%,#1a1f2f 100%);
   color:white;
   text-align:center;
-  font-family:Arial;
 }
 
-#ball {
+h1{
+  padding:20px;
+  font-size:32px;
+  letter-spacing:3px;
+  background:linear-gradient(45deg,#fff,#facc15);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.container{
+  display:flex;
+  justify-content:center;
+  gap:30px;
+  margin:20px;
+}
+
+.team{
+  width:200px;
+  padding:20px;
+  border-radius:20px;
+  background:#111827;
+  font-size:18px;
+  font-weight:bold;
+}
+
+.blueBox{ border-bottom:4px solid #3b82f6; }
+.greenBox{ border-bottom:4px solid #22c55e; }
+
+.team span{
+  display:block;
+  font-size:28px;
+  margin-top:10px;
+}
+
+.controls{ margin:20px; }
+
+button{
+  padding:10px 20px;
+  margin:5px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.blueBtn{ background:#2563eb; color:white; }
+.greenBtn{ background:#16a34a; color:white; }
+
+input{
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  margin:10px;
+}
+
+#arena{
+  width:600px;
+  height:400px;
+  margin:20px auto;
+  background:#0f172a;
+  border-radius:20px;
+  position:relative;
+  overflow:hidden;
+}
+
+#centerLine{
+  position:absolute;
+  left:50%;
+  top:0;
+  width:2px;
+  height:100%;
+  background:white;
+  opacity:0.2;
+}
+
+#ball{
   width:40px;
   height:40px;
-  background:red;
   border-radius:50%;
+  background:white;
   position:absolute;
-  left:100px;
-  top:100px;
+  box-shadow:0 0 20px white;
 }
 </style>
 </head>
+
 <body>
 
-<h1>Моя первая игра</h1>
-<div id="ball"></div>
+<h1>⚔️ BATTLE ROLL ⚔️</h1>
+
+<div>💰 Баланс: <span id="balance">100</span> TON</div>
+<div>🏦 Банк: <span id="bank">0</span> TON</div>
+
+<div class="container">
+  <div class="team blueBox">
+    🔵 СИНИЕ
+    <span id="blueTotal">0</span>
+  </div>
+
+  <div class="team greenBox">
+    🟢 ЗЕЛЕНЫЕ
+    <span id="greenTotal">0</span>
+  </div>
+</div>
+
+<div class="controls">
+  <input type="number" id="amount" value="1" min="1">
+  <br>
+  <button class="blueBtn" onclick="bet('blue')">Ставка на синих</button>
+  <button class="greenBtn" onclick="bet('green')">Ставка на зеленых</button>
+  <br>
+  <button onclick="startGame()">СТАРТ</button>
+</div>
+
+<div id="arena">
+  <div id="centerLine"></div>
+  <div id="ball"></div>
+</div>
 
 <script>
-let ball = document.getElementById("ball");
-let x = 100;
-let y = 100;
-let dx = 3;
-let dy = 3;
+let balance = 100;
+let blue = 0;
+let green = 0;
+let running = false;
 
-setInterval(() => {
-  x += dx;
-  y += dy;
+const ball = document.getElementById("ball");
+const arena = document.getElementById("arena");
 
-  if (x <= 0 || x >= window.innerWidth - 40) dx *= -1;
-  if (y <= 0 || y >= window.innerHeight - 40) dy *= -1;
+let x, y, vx, vy;
+const BALL_SIZE = 40;
 
-  ball.style.left = x + "px";
-  ball.style.top = y + "px";
-}, 16);
+function updateUI(){
+  document.getElementById("blueTotal").innerText = blue.toFixed(2);
+  document.getElementById("greenTotal").innerText = green.toFixed(2);
+  document.getElementById("balance").innerText = balance.toFixed(2);
+  document.getElementById("bank").innerText = (blue+green).toFixed(2);
+}
+
+function bet(team){
+  if(running) return;
+
+  const amount = parseFloat(document.getElementById("amount").value);
+  if(!amount || amount<=0) return;
+  if(amount>balance) return;
+
+  balance -= amount;
+
+  if(team==="blue") blue+=amount;
+  else green+=amount;
+
+  updateUI();
+}
+
+function startGame(){
+  if(running) return;
+  if(blue===0 || green===0){
+    alert("Нужны ставки на обе команды");
+    return;
+  }
+
+  running = true;
+
+  x = (arena.clientWidth-BALL_SIZE)/2;
+  y = (arena.clientHeight-BALL_SIZE)/2;
+
+  const angle = Math.random()*360;
+  const rad = angle*Math.PI/180;
+
+  vx = Math.cos(rad)*20;
+  vy = Math.sin(rad)*20;
+
+  animate();
+}
+
+function animate(){
+  if(!running) return;
+
+  x+=vx;
+  y+=vy;
+
+  if(x<=0 || x>=arena.clientWidth-BALL_SIZE) vx*=-1;
+  if(y<=0 || y>=arena.clientHeight-BALL_SIZE) vy*=-1;
+
+  vx*=0.99;
+  vy*=0.99;
+
+  ball.style.transform = `translate(${x}px, ${y}px)`;
+
+  const speed = Math.sqrt(vx*vx+vy*vy);
+
+  if(speed<0.5){
+    const winner = (x+BALL_SIZE/2)<arena.clientWidth/2 ? "blue":"green";
+    const total = blue+green;
+
+    balance+=total;
+
+    alert("Победили "+(winner==="blue"?"СИНИЕ":"ЗЕЛЕНЫЕ"));
+
+    blue=0;
+    green=0;
+    running=false;
+    updateUI();
+    return;
+  }
+
+  requestAnimationFrame(animate);
+}
+
+updateUI();
 </script>
 
 </body>
