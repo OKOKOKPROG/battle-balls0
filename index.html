@@ -1,227 +1,193 @@
+
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Battle Roll</title>
+<title>Battle of Balls</title>
 
 <style>
 body{
-  margin:0;
-  font-family:'Segoe UI',Arial,sans-serif;
-  background:linear-gradient(135deg,#0b0f1a 0%,#1a1f2f 100%);
-  color:white;
-  text-align:center;
+    margin:0;
+    background:#0f0f0f;
+    font-family:Arial;
+    color:white;
+    text-align:center;
+    overflow:hidden;
 }
 
 h1{
-  padding:20px;
-  font-size:32px;
-  letter-spacing:3px;
-  background:linear-gradient(45deg,#fff,#facc15);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
+    margin-top:15px;
+    font-size:36px;
 }
 
-.container{
-  display:flex;
-  justify-content:center;
-  gap:30px;
-  margin:20px;
+#controls{
+    margin:15px;
 }
-
-.team{
-  width:200px;
-  padding:20px;
-  border-radius:20px;
-  background:#111827;
-  font-size:18px;
-  font-weight:bold;
-}
-
-.blueBox{ border-bottom:4px solid #3b82f6; }
-.greenBox{ border-bottom:4px solid #22c55e; }
-
-.team span{
-  display:block;
-  font-size:28px;
-  margin-top:10px;
-}
-
-.controls{ margin:20px; }
-
-button{
-  padding:10px 20px;
-  margin:5px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:bold;
-}
-
-.blueBtn{ background:#2563eb; color:white; }
-.greenBtn{ background:#16a34a; color:white; }
 
 input{
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  margin:10px;
+    width:80px;
+    padding:5px;
+    font-size:16px;
+}
+
+button{
+    padding:8px 20px;
+    font-size:16px;
+    cursor:pointer;
+    background:#222;
+    color:white;
+    border:1px solid #555;
 }
 
 #arena{
-  width:600px;
-  height:400px;
-  margin:20px auto;
-  background:#0f172a;
-  border-radius:20px;
-  position:relative;
-  overflow:hidden;
+    position:relative;
+    width:100%;
+    height:70vh;
+    overflow:hidden;
+    border-top:2px solid #333;
 }
 
-#centerLine{
-  position:absolute;
-  left:50%;
-  top:0;
-  width:2px;
-  height:100%;
-  background:white;
-  opacity:0.2;
+/* ЗОНЫ */
+#blueZone{
+    position:absolute;
+    left:0;
+    top:0;
+    height:100%;
+    background:#0066ff;
+    width:50%;
+    transition:width 0.5s;
 }
 
+#greenZone{
+    position:absolute;
+    right:0;
+    top:0;
+    height:100%;
+    background:#00cc44;
+    width:50%;
+    transition:width 0.5s;
+}
+
+/* ШАР */
 #ball{
-  width:40px;
-  height:40px;
-  border-radius:50%;
-  background:white;
-  position:absolute;
-  box-shadow:0 0 20px white;
+    position:absolute;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    background:white;
 }
 </style>
 </head>
-
 <body>
 
-<h1>⚔️ BATTLE ROLL ⚔️</h1>
+<h1>⚔️ Battle of Balls</h1>
 
-<div>💰 Баланс: <span id="balance">100</span> TON</div>
-<div>🏦 Банк: <span id="bank">0</span> TON</div>
-
-<div class="container">
-  <div class="team blueBox">
-    🔵 СИНИЕ
-    <span id="blueTotal">0</span>
-  </div>
-
-  <div class="team greenBox">
-    🟢 ЗЕЛЕНЫЕ
-    <span id="greenTotal">0</span>
-  </div>
-</div>
-
-<div class="controls">
-  <input type="number" id="amount" value="1" min="1">
-  <br>
-  <button class="blueBtn" onclick="bet('blue')">Ставка на синих</button>
-  <button class="greenBtn" onclick="bet('green')">Ставка на зеленых</button>
-  <br>
-  <button onclick="startGame()">СТАРТ</button>
+<div id="controls">
+    Blue TON: <input type="number" id="blueInput" value="1" step="0.1">
+    Green TON: <input type="number" id="greenInput" value="1" step="0.1">
+    <button onclick="startGame()">START</button>
 </div>
 
 <div id="arena">
-  <div id="centerLine"></div>
-  <div id="ball"></div>
+    <div id="blueZone"></div>
+    <div id="greenZone"></div>
+    <div id="ball"></div>
 </div>
 
 <script>
-let balance = 100;
-let blue = 0;
-let green = 0;
-let running = false;
+let ball = document.getElementById("ball");
+let blueZone = document.getElementById("blueZone");
+let greenZone = document.getElementById("greenZone");
+let arena = document.getElementById("arena");
 
-const ball = document.getElementById("ball");
-const arena = document.getElementById("arena");
+let x, y, dx, dy;
+let animation;
+let speed = 20;
+let duration = 7000;
+let startTime;
 
-let x, y, vx, vy;
-const BALL_SIZE = 40;
+function updateZones(){
+    let blue = parseFloat(document.getElementById("blueInput").value) || 0;
+    let green = parseFloat(document.getElementById("greenInput").value) || 0;
 
-function updateUI(){
-  document.getElementById("blueTotal").innerText = blue.toFixed(2);
-  document.getElementById("greenTotal").innerText = green.toFixed(2);
-  document.getElementById("balance").innerText = balance.toFixed(2);
-  document.getElementById("bank").innerText = (blue+green).toFixed(2);
-}
+    let total = blue + green;
 
-function bet(team){
-  if(running) return;
+    if(total === 0){
+        blueZone.style.width = "50%";
+        greenZone.style.width = "50%";
+        return;
+    }
 
-  const amount = parseFloat(document.getElementById("amount").value);
-  if(!amount || amount<=0) return;
-  if(amount>balance) return;
+    let bluePercent = (blue / total) * 100;
+    let greenPercent = 100 - bluePercent;
 
-  balance -= amount;
-
-  if(team==="blue") blue+=amount;
-  else green+=amount;
-
-  updateUI();
+    blueZone.style.width = bluePercent + "%";
+    greenZone.style.width = greenPercent + "%";
 }
 
 function startGame(){
-  if(running) return;
-  if(blue===0 || green===0){
-    alert("Нужны ставки на обе команды");
-    return;
-  }
 
-  running = true;
+    updateZones();
 
-  x = (arena.clientWidth-BALL_SIZE)/2;
-  y = (arena.clientHeight-BALL_SIZE)/2;
+    let blue = parseFloat(document.getElementById("blueInput").value) || 0;
+    let green = parseFloat(document.getElementById("greenInput").value) || 0;
 
-  const angle = Math.random()*360;
-  const rad = angle*Math.PI/180;
+    let total = blue + green;
+    if(total === 0){
+        alert("No TON placed");
+        return;
+    }
 
-  vx = Math.cos(rad)*20;
-  vy = Math.sin(rad)*20;
+    x = arena.clientWidth / 2;
+    y = arena.clientHeight / 2;
 
-  animate();
+    dx = (Math.random() - 0.5) * speed;
+    dy = (Math.random() - 0.5) * speed;
+
+    startTime = Date.now();
+
+    cancelAnimationFrame(animation);
+    animate();
 }
 
 function animate(){
-  if(!running) return;
 
-  x+=vx;
-  y+=vy;
+    let now = Date.now();
+    let elapsed = now - startTime;
 
-  if(x<=0 || x>=arena.clientWidth-BALL_SIZE) vx*=-1;
-  if(y<=0 || y>=arena.clientHeight-BALL_SIZE) vy*=-1;
+    let progress = elapsed / duration;
 
-  vx*=0.99;
-  vy*=0.99;
+    if(progress > 1){
+        progress = 1;
+    }
 
-  ball.style.transform = `translate(${x}px, ${y}px)`;
+    let currentSpeed = speed * (1 - progress);
 
-  const speed = Math.sqrt(vx*vx+vy*vy);
+    x += dx * (currentSpeed / speed);
+    y += dy * (currentSpeed / speed);
 
-  if(speed<0.5){
-    const winner = (x+BALL_SIZE/2)<arena.clientWidth/2 ? "blue":"green";
-    const total = blue+green;
+    if(x <= 0 || x >= arena.clientWidth - 30) dx *= -1;
+    if(y <= 0 || y >= arena.clientHeight - 30) dy *= -1;
 
-    balance+=total;
+    ball.style.left = x + "px";
+    ball.style.top = y + "px";
 
-    alert("Победили "+(winner==="blue"?"СИНИЕ":"ЗЕЛЕНЫЕ"));
-
-    blue=0;
-    green=0;
-    running=false;
-    updateUI();
-    return;
-  }
-
-  requestAnimationFrame(animate);
+    if(progress < 1){
+        animation = requestAnimationFrame(animate);
+    }else{
+        finishGame();
+    }
 }
 
-updateUI();
+function finishGame(){
+    let blueWidth = blueZone.clientWidth;
+
+    if(x < blueWidth){
+        alert("🔵 BLUE WINS");
+    }else{
+        alert("🟢 GREEN WINS");
+    }
+}
 </script>
 
 </body>
