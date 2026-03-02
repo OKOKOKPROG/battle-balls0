@@ -1,192 +1,199 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Battle of Balls</title>
 
 <style>
+:root{
+  --bg:#0b0f1a;
+  --card:#121829;
+  --blue:#1e66ff;
+  --green:#00c853;
+}
+
+*{box-sizing:border-box}
+
 body{
-    margin:0;
-    background:#0f0f0f;
-    font-family:Arial;
-    color:white;
-    text-align:center;
-    overflow:hidden;
+  margin:0;
+  font-family:Inter, Arial, sans-serif;
+  background:linear-gradient(180deg,#0b0f1a,#05070d);
+  color:#fff;
+  text-align:center;
 }
 
 h1{
-    margin-top:15px;
-    font-size:36px;
+  margin:20px 0 10px;
+  font-size:34px;
+  font-weight:700;
+  letter-spacing:1px;
 }
 
-#controls{
-    margin:15px;
+.panel{
+  background:var(--card);
+  display:inline-block;
+  padding:15px 25px;
+  border-radius:14px;
+  box-shadow:0 0 40px rgba(0,0,0,0.5);
 }
 
 input{
-    width:80px;
-    padding:5px;
-    font-size:16px;
+  width:90px;
+  padding:6px;
+  margin:5px;
+  border-radius:8px;
+  border:none;
+  text-align:center;
+  font-size:15px;
 }
 
 button{
-    padding:8px 20px;
-    font-size:16px;
-    cursor:pointer;
-    background:#222;
-    color:white;
-    border:1px solid #555;
+  padding:8px 22px;
+  border:none;
+  border-radius:10px;
+  background:#1e66ff;
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.2s;
 }
+button:hover{opacity:0.85}
 
 #arena{
-    position:relative;
-    width:100%;
-    height:70vh;
-    overflow:hidden;
-    border-top:2px solid #333;
+  position:relative;
+  margin-top:20px;
+  width:100%;
+  height:65vh;
+  overflow:hidden;
+  border-top:2px solid #1b2238;
 }
 
-/* ЗОНЫ */
+/* Зоны */
 #blueZone{
-    position:absolute;
-    left:0;
-    top:0;
-    height:100%;
-    background:#0066ff;
-    width:50%;
-    transition:width 0.5s;
+  position:absolute;
+  left:0;
+  top:0;
+  height:100%;
+  background:linear-gradient(90deg,#0d2b6b,#1e66ff);
+  width:50%;
+  transition:width .4s;
 }
 
 #greenZone{
-    position:absolute;
-    right:0;
-    top:0;
-    height:100%;
-    background:#00cc44;
-    width:50%;
-    transition:width 0.5s;
+  position:absolute;
+  right:0;
+  top:0;
+  height:100%;
+  background:linear-gradient(90deg,#00c853,#006b2e);
+  width:50%;
+  transition:width .4s;
 }
 
-/* ШАР */
+/* Шар */
 #ball{
-    position:absolute;
-    width:30px;
-    height:30px;
-    border-radius:50%;
-    background:white;
+  position:absolute;
+  width:55px;
+  height:55px;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 30%,#ffffff,#cfcfcf);
+  box-shadow:0 0 20px rgba(255,255,255,0.6);
 }
 </style>
 </head>
 <body>
 
-<h1>⚔️ Battle of Balls</h1>
+<h1>⚔ Battle of Balls</h1>
 
-<div id="controls">
-    Blue TON: <input type="number" id="blueInput" value="1" step="0.1">
-    Green TON: <input type="number" id="greenInput" value="1" step="0.1">
-    <button onclick="startGame()">START</button>
+<div class="panel">
+  🔵 <input type="number" id="blueInput" value="1" step="0.1">
+  🟢 <input type="number" id="greenInput" value="1" step="0.1">
+  <button onclick="startGame()">START</button>
 </div>
 
 <div id="arena">
-    <div id="blueZone"></div>
-    <div id="greenZone"></div>
-    <div id="ball"></div>
+  <div id="blueZone"></div>
+  <div id="greenZone"></div>
+  <div id="ball"></div>
 </div>
 
 <script>
-let ball = document.getElementById("ball");
-let blueZone = document.getElementById("blueZone");
-let greenZone = document.getElementById("greenZone");
-let arena = document.getElementById("arena");
+const ball = document.getElementById("ball");
+const arena = document.getElementById("arena");
+const blueZone = document.getElementById("blueZone");
 
-let x, y, dx, dy;
-let animation;
-let speed = 20;
-let duration = 7000;
+let x,y,dx,dy;
 let startTime;
+let animation;
+let duration = 7000;        // 7 секунд
+let startSpeed = 45;        // ОЧЕНЬ быстрый старт
 
 function updateZones(){
-    let blue = parseFloat(document.getElementById("blueInput").value) || 0;
-    let green = parseFloat(document.getElementById("greenInput").value) || 0;
+  let blue = parseFloat(blueInput.value)||0;
+  let green = parseFloat(greenInput.value)||0;
+  let total = blue+green;
 
-    let total = blue + green;
+  if(total===0){
+    blueZone.style.width="50%";
+    greenZone.style.width="50%";
+    return;
+  }
 
-    if(total === 0){
-        blueZone.style.width = "50%";
-        greenZone.style.width = "50%";
-        return;
-    }
-
-    let bluePercent = (blue / total) * 100;
-    let greenPercent = 100 - bluePercent;
-
-    blueZone.style.width = bluePercent + "%";
-    greenZone.style.width = greenPercent + "%";
+  let bluePercent=(blue/total)*100;
+  blueZone.style.width=bluePercent+"%";
+  greenZone.style.width=(100-bluePercent)+"%";
 }
 
 function startGame(){
+  updateZones();
 
-    updateZones();
+  x = arena.clientWidth/2;
+  y = arena.clientHeight/2;
 
-    let blue = parseFloat(document.getElementById("blueInput").value) || 0;
-    let green = parseFloat(document.getElementById("greenInput").value) || 0;
+  dx = (Math.random()-0.5);
+  dy = (Math.random()-0.5);
 
-    let total = blue + green;
-    if(total === 0){
-        alert("No TON placed");
-        return;
-    }
+  let length = Math.sqrt(dx*dx+dy*dy);
+  dx/=length;
+  dy/=length;
 
-    x = arena.clientWidth / 2;
-    y = arena.clientHeight / 2;
+  startTime = performance.now();
 
-    dx = (Math.random() - 0.5) * speed;
-    dy = (Math.random() - 0.5) * speed;
-
-    startTime = Date.now();
-
-    cancelAnimationFrame(animation);
-    animate();
+  cancelAnimationFrame(animation);
+  animate();
 }
 
-function animate(){
+function animate(time){
+  let elapsed = time - startTime;
+  let progress = elapsed / duration;
+  if(progress>1) progress=1;
 
-    let now = Date.now();
-    let elapsed = now - startTime;
+  // Плавное замедление (ease-out cubic)
+  let speed = startSpeed * (1 - Math.pow(progress,3));
 
-    let progress = elapsed / duration;
+  x += dx * speed;
+  y += dy * speed;
 
-    if(progress > 1){
-        progress = 1;
-    }
+  if(x<=0 || x>=arena.clientWidth-55) dx*=-1;
+  if(y<=0 || y>=arena.clientHeight-55) dy*=-1;
 
-    let currentSpeed = speed * (1 - progress);
+  ball.style.left=x+"px";
+  ball.style.top=y+"px";
 
-    x += dx * (currentSpeed / speed);
-    y += dy * (currentSpeed / speed);
-
-    if(x <= 0 || x >= arena.clientWidth - 30) dx *= -1;
-    if(y <= 0 || y >= arena.clientHeight - 30) dy *= -1;
-
-    ball.style.left = x + "px";
-    ball.style.top = y + "px";
-
-    if(progress < 1){
-        animation = requestAnimationFrame(animate);
-    }else{
-        finishGame();
-    }
+  if(progress<1){
+    animation=requestAnimationFrame(animate);
+  }else{
+    finishGame();
+  }
 }
 
 function finishGame(){
-    let blueWidth = blueZone.clientWidth;
-
-    if(x < blueWidth){
-        alert("🔵 BLUE WINS");
-    }else{
-        alert("🟢 GREEN WINS");
-    }
+  let blueWidth=blueZone.clientWidth;
+  if(x<blueWidth){
+    alert("🔵 BLUE WINS");
+  }else{
+    alert("🟢 GREEN WINS");
+  }
 }
 </script>
 
