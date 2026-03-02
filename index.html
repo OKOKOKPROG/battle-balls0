@@ -1,201 +1,362 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Battle of Balls</title>
-
-<style>
-:root{
-  --bg:#0b0f1a;
-  --card:#121829;
-  --blue:#1e66ff;
-  --green:#00c853;
-}
-
-*{box-sizing:border-box}
-
-body{
-  margin:0;
-  font-family:Inter, Arial, sans-serif;
-  background:linear-gradient(180deg,#0b0f1a,#05070d);
-  color:#fff;
-  text-align:center;
-}
-
-h1{
-  margin:20px 0 10px;
-  font-size:34px;
-  font-weight:700;
-  letter-spacing:1px;
-}
-
-.panel{
-  background:var(--card);
-  display:inline-block;
-  padding:15px 25px;
-  border-radius:14px;
-  box-shadow:0 0 40px rgba(0,0,0,0.5);
-}
-
-input{
-  width:90px;
-  padding:6px;
-  margin:5px;
-  border-radius:8px;
-  border:none;
-  text-align:center;
-  font-size:15px;
-}
-
-button{
-  padding:8px 22px;
-  border:none;
-  border-radius:10px;
-  background:#1e66ff;
-  color:#fff;
-  font-weight:600;
-  cursor:pointer;
-  transition:0.2s;
-}
-button:hover{opacity:0.85}
-
-#arena{
-  position:relative;
-  margin-top:20px;
-  width:100%;
-  height:65vh;
-  overflow:hidden;
-  border-top:2px solid #1b2238;
-}
-
-/* Зоны */
-#blueZone{
-  position:absolute;
-  left:0;
-  top:0;
-  height:100%;
-  background:linear-gradient(90deg,#0d2b6b,#1e66ff);
-  width:50%;
-  transition:width .4s;
-}
-
-#greenZone{
-  position:absolute;
-  right:0;
-  top:0;
-  height:100%;
-  background:linear-gradient(90deg,#00c853,#006b2e);
-  width:50%;
-  transition:width .4s;
-}
-
-/* Шар */
-#ball{
-  position:absolute;
-  width:55px;
-  height:55px;
-  border-radius:50%;
-  background:radial-gradient(circle at 30% 30%,#ffffff,#cfcfcf);
-  box-shadow:0 0 20px rgba(255,255,255,0.6);
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle of Balls</title>
+    <!-- Подключаем Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #0b0f1c, #1a1f33);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            color: white;
+        }
+        .game-container {
+            max-width: 400px;
+            width: 100%;
+            background: rgba(18, 24, 40, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 32px;
+            padding: 24px 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(76, 130, 250, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Шапка */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 22px;
+            background: linear-gradient(135deg, #fff, #a0b5ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .balance {
+            background: #0f1422;
+            padding: 8px 16px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #2f3b66;
+            font-weight: 600;
+        }
+        .balance span {
+            color: #46b4ff;
+            margin-right: 4px;
+        }
+        /* Поле с шаром */
+        .field {
+            background: #101624;
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #2a3456;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+        .ball-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        .ball {
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle at 30% 30%, #ffffff, #c0c0c0);
+            border-radius: 50%;
+            box-shadow: 0 0 30px #66aaff, 0 0 60px #3366cc;
+            border: 3px solid white;
+            transition: transform 0.1s ease;
+            animation: pulse 2s infinite alternate;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 20px #3a7bd5, 0 0 40px #1e4b8f; }
+            100% { box-shadow: 0 0 40px #6aa9ff, 0 0 80px #2a5fc1; }
+        }
+        .timer {
+            text-align: center;
+            font-size: 48px;
+            font-weight: 800;
+            text-shadow: 0 0 15px cyan;
+            margin: 5px 0 10px;
+            background: #0a0e1a;
+            padding: 8px;
+            border-radius: 60px;
+            border: 1px solid #3e4b75;
+        }
+        /* Команды */
+        .teams {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .team {
+            flex: 1;
+            border-radius: 30px;
+            padding: 20px 8px;
+            text-align: center;
+            font-weight: 700;
+            transition: 0.2s;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .team:active {
+            transform: scale(0.97);
+        }
+        .blue {
+            background: linear-gradient(145deg, #1240a0, #0b1d6b);
+            box-shadow: 0 8px 0 #05103b, 0 10px 20px rgba(0, 80, 255, 0.4);
+        }
+        .green {
+            background: linear-gradient(145deg, #1f8b4c, #0b5e2e);
+            box-shadow: 0 8px 0 #05401e, 0 10px 20px rgba(0, 255, 100, 0.3);
+        }
+        .team-name {
+            font-size: 24px;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        .pool {
+            font-size: 28px;
+            font-weight: 800;
+            margin: 8px 0;
+        }
+        .pool small {
+            font-size: 16px;
+            font-weight: normal;
+            opacity: 0.8;
+        }
+        .chance {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 14px;
+            display: inline-block;
+            backdrop-filter: blur(4px);
+        }
+        /* Кнопка ставки */
+        .bet-panel {
+            background: #0f1629;
+            border-radius: 32px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid #39487a;
+        }
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .input-group input {
+            flex: 2;
+            background: #1c253f;
+            border: 2px solid #31416b;
+            border-radius: 40px;
+            padding: 16px;
+            font-size: 18px;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+        }
+        .input-group button {
+            flex: 1;
+            background: linear-gradient(145deg, #3080ff, #1a4bb8);
+            border: none;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 18px;
+            color: white;
+            padding: 0 16px;
+            box-shadow: 0 5px 0 #0e2a62;
+            transition: 0.1s;
+            border: 1px solid #77aaff;
+        }
+        .input-group button:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #0e2a62;
+        }
+        .note {
+            text-align: center;
+            font-size: 13px;
+            color: #8c9bd1;
+        }
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #7284b0;
+        }
+    </style>
 </head>
 <body>
+    <div class="game-container">
+        <!-- Шапка -->
+        <div class="header">
+            <div class="logo">⚔️ BATTLE OF BALLS</div>
+            <div class="balance"><span>💰</span> 0.00 TON</div>
+        </div>
 
-<h1>⚔ Battle of Balls</h1>
+        <!-- Поле с шаром и таймер -->
+        <div class="field">
+            <div class="ball-container">
+                <div class="ball" id="ball"></div>
+            </div>
+            <div class="timer" id="timer">00:30</div>
+        </div>
 
-<div class="panel">
-  🔵 <input type="number" id="blueInput" value="1" step="0.1">
-  🟢 <input type="number" id="greenInput" value="1" step="0.1">
-  <button onclick="startGame()">START</button>
-</div>
+        <!-- Команды -->
+        <div class="teams">
+            <div class="team blue" id="teamBlue" onclick="selectTeam('blue')">
+                <div class="team-name">🔵 СИНИЕ</div>
+                <div class="pool" id="bluePool">0 <small>TON</small></div>
+                <div class="chance" id="blueChance">0%</div>
+            </div>
+            <div class="team green" id="teamGreen" onclick="selectTeam('green')">
+                <div class="team-name">🟢 ЗЕЛЁНЫЕ</div>
+                <div class="pool" id="greenPool">0 <small>TON</small></div>
+                <div class="chance" id="greenChance">0%</div>
+            </div>
+        </div>
 
-<div id="arena">
-  <div id="blueZone"></div>
-  <div id="greenZone"></div>
-  <div id="ball"></div>
-</div>
+        <!-- Панель ставки -->
+        <div class="bet-panel">
+            <div style="text-align: center; margin-bottom: 6px; font-weight: 600;">ТВОЯ СТАВКА</div>
+            <div class="input-group">
+                <input type="number" id="betAmount" placeholder="0.1 TON" min="0.1" step="0.1" value="0.1">
+                <button id="betBtn" onclick="placeBet()">⚡ BET</button>
+            </div>
+            <div class="note">Комиссия 15% с пула</div>
+        </div>
 
-<script>
-const ball = document.getElementById("ball");
-const arena = document.getElementById("arena");
-const blueZone = document.getElementById("blueZone");
+        <!-- Подсказки -->
+        <div class="footer">
+            <span>👥 В игре: <span id="playersCount">0</span></span>
+            <span>⏳ Раунд каждые 30 сек</span>
+        </div>
+    </div>
 
-let x,y,dx,dy;
-let startTime;
-let animation;
-let duration = 7000;        // 7 секунд
-let startSpeed = 45;        // ОЧЕНЬ быстрый старт
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Растянуть на весь экран
+        tg.MainButton.setText('Пополнить').show();
 
-function updateZones(){
-  let blue = parseFloat(blueInput.value)||0;
-  let green = parseFloat(greenInput.value)||0;
-  let total = blue+green;
+        // Данные игры
+        let bluePool = 0;
+        let greenPool = 0;
+        let selectedTeam = null;
+        let timerSeconds = 30;
+        let timerInterval;
+        
+        // Telegram данные пользователя (для отладки)
+        const user = tg.initDataUnsafe?.user;
+        console.log('Пользователь:', user);
 
-  if(total===0){
-    blueZone.style.width="50%";
-    greenZone.style.width="50%";
-    return;
-  }
+        // Функция обновления интерфейса
+        function updateUI() {
+            document.getElementById('bluePool').innerHTML = bluePool + ' <small>TON</small>';
+            document.getElementById('greenPool').innerHTML = greenPool + ' <small>TON</small>';
+            
+            const total = bluePool + greenPool;
+            const blueChance = total > 0 ? Math.round((bluePool / total) * 100) : 0;
+            const greenChance = total > 0 ? 100 - blueChance : 0;
+            
+            document.getElementById('blueChance').innerText = blueChance + '%';
+            document.getElementById('greenChance').innerText = greenChance + '%';
+            
+            // Подсветка выбранной команды
+            document.getElementById('teamBlue').style.borderColor = selectedTeam === 'blue' ? '#46b4ff' : 'transparent';
+            document.getElementById('teamGreen').style.borderColor = selectedTeam === 'green' ? '#46b4ff' : 'transparent';
+        }
 
-  let bluePercent=(blue/total)*100;
-  blueZone.style.width=bluePercent+"%";
-  greenZone.style.width=(100-bluePercent)+"%";
-}
+        // Выбор команды
+        window.selectTeam = function(team) {
+            selectedTeam = team;
+            updateUI();
+            tg.HapticFeedback.impactOccurred('light'); // виброотклик
+        };
 
-function startGame(){
-  updateZones();
+        // Функция ставки (пока просто плюсует, позже подключим платежи)
+        window.placeBet = function() {
+            if (!selectedTeam) {
+                tg.showAlert('Сначала выбери команду!');
+                return;
+            }
+            
+            const amount = parseFloat(document.getElementById('betAmount').value);
+            if (isNaN(amount) || amount < 0.1) {
+                tg.showAlert('Минимальная ставка 0.1 TON');
+                return;
+            }
 
-  x = arena.clientWidth/2;
-  y = arena.clientHeight/2;
+            // Пока просто имитация, потом здесь будет вызов платежа
+            tg.showAlert(`Ставка ${amount} TON за ${selectedTeam === 'blue' ? 'синих' : 'зелёных'} (тест)`);
+            
+            // Временно добавим баланс для демо
+            if (selectedTeam === 'blue') {
+                bluePool += amount;
+            } else {
+                greenPool += amount;
+            }
+            
+            updateUI();
+            tg.HapticFeedback.notificationOccurred('success');
+        };
 
-  dx = (Math.random()-0.5);
-  dy = (Math.random()-0.5);
+        // Таймер
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                if (timerSeconds < 0) timerSeconds = 30;
+                
+                const mins = Math.floor(timerSeconds / 60);
+                const secs = timerSeconds % 60;
+                document.getElementById('timer').innerText = 
+                    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                // Вращение шарика (тупо для красоты)
+                if (timerSeconds < 5) {
+                    document.getElementById('ball').style.transform = `rotate(${timerSeconds * 360}deg)`;
+                } else {
+                    document.getElementById('ball').style.transform = `rotate(${timerSeconds * 20}deg)`;
+                }
+                
+                // Здесь потом будет логика розыгрыша при 00:00
+                if (timerSeconds === 0) {
+                    // Фейковый розыгрыш
+                    tg.showAlert('🎲 Розыгрыш! Победитель будет объявлен');
+                    // Сброс пулов (временный)
+                    bluePool = 0;
+                    greenPool = 0;
+                    updateUI();
+                }
+            }, 1000);
+        }
 
-  let length = Math.sqrt(dx*dx+dy*dy);
-  dx/=length;
-  dy/=length;
+        // Кнопка пополнения (тест)
+        tg.MainButton.onClick(() => {
+            tg.showAlert('Пополнение через Telegram Wallet будет позже');
+        });
 
-  startTime = performance.now();
-
-  cancelAnimationFrame(animation);
-  animate();
-}
-
-function animate(time){
-  let elapsed = time - startTime;
-  let progress = elapsed / duration;
-  if(progress>1) progress=1;
-
-  // Плавное замедление (ease-out cubic)
-  let speed = startSpeed * (1 - Math.pow(progress,3));
-
-  x += dx * speed;
-  y += dy * speed;
-
-  if(x<=0 || x>=arena.clientWidth-55) dx*=-1;
-  if(y<=0 || y>=arena.clientHeight-55) dy*=-1;
-
-  ball.style.left=x+"px";
-  ball.style.top=y+"px";
-
-  if(progress<1){
-    animation=requestAnimationFrame(animate);
-  }else{
-    finishGame();
-  }
-}
-
-function finishGame(){
-  let blueWidth=blueZone.clientWidth;
-  if(x<blueWidth){
-    alert("🔵 BLUE WINS");
-  }else{
-    alert("🟢 GREEN WINS");
-  }
-}
-</script>
-
+        // Старт
+        updateUI();
+        startTimer();
+    </script>
 </body>
 </html>
